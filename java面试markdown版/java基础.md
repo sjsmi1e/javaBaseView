@@ -68,7 +68,13 @@ stringBuild
 是jdk1.5后用来替换stringBuffer的一个类，大多数时候可以替换StringBuffer。和StringBuffer的区别在于Stringbuild是一个单线程使用的类，不值执行线程同步所以比
 StringBuffer的速度快，效率高。是线程非安全的
 
-**String s="abc"及String s=new String("abc")**
+## **String s="abc"及String s=new String("abc")问题**
+
+String a="abc"，这行代码被执行的时候，JAVA虚拟机首先在字符串池中查找是否已经存在了值为"abc"的这么一个对象，它的判断依据是String类equals(Object obj)方法的返回值。如果有，则不再创建新的对象，将使用串池里原来的那个内存，直接返回已存在对象的引用，而不会重新分配内存；如果没有，则先创建这个对象，然后把它加入到字符串池中，再将它的引用返回。
+
+而如果用String s=new String("abc")，不管串池里有没有"abc"，它都会在堆中重新分配一块内存，定义一个新的对象
+
+
 
 IO流
 ====
@@ -95,8 +101,7 @@ Aio
 
 异步阻塞
 
-NIO是同步的IO，是因为程序需要IO操作时，必须获得了IO权限后亲自进行IO操作才能进行下一步操作。AIO是对NIO的改进（所以AIO又叫NIO.2），它是基于Proactor模型的。每个socket连接在事件分离器注册
-IO完成事件 和
+NIO是同步的IO，是因为程序需要IO操作时，必须获得了IO权限后亲自进行IO操作才能进行下一步操作。AIO是对NIO的改进（所以AIO又叫NIO.2），它是基于Proactor模型的。每个socket连接在事件分离器注册IO完成事件 和
 IO完成事件处理器。程序需要进行IO时，向分离器发出IO请求并把所用的Buffer区域告知分离器，分离器通知操作系统进行IO操作，操作系统自己不断尝试获取IO权限并进行IO操作（数据保存在Buffer区），操作完成后通知分离器；分离器检测到
 IO完成事件，则激活
 IO完成事件处理器，处理器会通知程序说“IO已完成”，程序知道后就直接从Buffer区进行数据的读写。
