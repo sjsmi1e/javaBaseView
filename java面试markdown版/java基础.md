@@ -425,6 +425,65 @@ JAVA线程状态：
 
 线程抢到了锁进了同步代码块，（由于某种业务需求）某些条件下Object.wait()了，就处于了等待状态。（此时线程已经进入了同步代码块）
 
+## ThreadLocal及源码分析
+
+ThreadLocal即线程内部变量，当并发线程以顺势性能为代价去实现线程安全性问题时，我们可以使用ThreadLocal去使用线程内部变量达到线程安全，相对于锁，自然快了很多。
+
+例子：
+
+```java
+    static ThreadLocal<SimpleDateFormat> tl = new ThreadLocal<SimpleDateFormat>();
+
+    public static class ParseDate implements Runnable {
+        int i = 0;
+
+        public ParseDate(int i) {
+            this.i = i;
+        }
+
+        public void run() {
+            try {
+                if (tl.get() == null) {
+                    tl.set(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"));
+                }
+                Date t = tl.get().parse("2015-03-29 19:29:" + i % 60);
+                System.out.println(i + ":" + t);
+            } catch (ParseException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public static void main(String[] args) {
+        ExecutorService es = Executors.newFixedThreadPool(10);
+        for (int i = 0; i < 1000; i++) {
+            es.execute(new ParseDate(i));
+        }
+    }
+```
+
+源码分析
+
+```java
+    public T get() {
+        Thread t = Thread.currentThread();
+        ThreadLocalMap map = getMap(t);
+        if (map != null) {
+            ThreadLocalMap.Entry e = map.getEntry(this);
+            if (e != null) {
+                @SuppressWarnings("unchecked")
+                T result = (T)e.value;
+                return result;
+            }
+        }
+        return setInitialValue();
+    }
+```
+
+![1563617399620](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\1563617399620.png)
+
+继承弱引用，所以为null就会被gc，当遇到hash碰撞时，使用nextIndex（）的方法解决。
+
 同步容器：
 ----------
 
@@ -447,7 +506,7 @@ Arraylist----CopyOnWriteArrayList(增加或者删除元素耗费内存，无法�
 
 HashSet----CopyOnWriteArraySet(基于CopyOnWriteArrayList)
 
-HashMap--ConcurrentHashMap（段锁操作实现线程安全）
+HashMap--ConcurrentHashMap（加锁操作实现线程安全）
 
 TreeSet--ConcurrentSkipListSet
 
